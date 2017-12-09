@@ -1,2 +1,2 @@
 # goGame
-the game of go written in go
+the game of go written in golang
