@@ -1,5 +1,11 @@
 package main
 
+import (
+	"strconv"
+	"fmt"
+	"bytes"
+)
+
 /*
 
 Goal:
@@ -12,9 +18,9 @@ a frame being a stored form of the current board state
 A. before each move is made it must be checked to be legal
 x .5 check if spot is un ocupied
 x 1. first we must check that move satisfies the rule of ko (board must change between moves)
-2. second we should check if the place is next to any open space, if true then move is legal
-3. if false we should check if it is next to any stones of the same color
-4. if false then it is an illegal move
+x 2. second we should check if the place is next to any open space, if true then move is legal
+x3. if false we should check if it is next to any stones of the same color
+x4. if false then it is an illegal move
 5. if true we must check to see if each separate same color stone touches whitespace
 6. if not then we must check if it touches a stone of the same color
 6a. if stone1 does touch stone2 of same color add id of stone1 to hashset
@@ -37,13 +43,78 @@ B. after each move is made, touching other color stones must have liberties chec
 
 func main() {
 	//fmt.Println(sa)
-	g := Game{size: 9}
+	g := Game{size: 9,
+		frameRecord: []frame{
+			{size: 9,
+				board: []int{
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+				},
+			},
+			{size: 9,
+				board: []int{
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+				},
+			},
+			{size: 9,
+				board: []int{
+					0, 1, -1, -1, 0, 0, 0, 0, 0, //y 8
+					1, 0, 1, 1, -1, 0, 0, 0, 0,
+					0, 1, -1, 1, -1, 0, 0, 0, 0,
+					0, 0, 0, -1, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, //y 0
+				},
+			},
+		},
+	}
+
+	//anf := g.frameRecord[2]
+	//anf.print()
+	//anf.processTakenStones(stone{1, 7, -1})
+
+	//fmt.Println(anf.getSurroundingStones(stone{1,8, -1}))
+	//fmt.Println(anf.getStone(1,8).color)
+
+	fmt.Println(g.isMovePossible(stone{1, 7, -1}))
 
 }
 
 //---------------
 
-const size = 19
+//const size = 9
+
+type posMap struct {
+	m map[string]bool
+}
+
+func (p posMap) add(x int, y int) {
+	str := strconv.Itoa(x) + "," + strconv.Itoa(y)
+	p.m[str] = true
+}
+
+func (p posMap) get(x int, y int) bool {
+	str := strconv.Itoa(x) + "," + strconv.Itoa(y)
+	return p.m[str]
+}
 
 // stone is a representation of a spot on a board.
 // it is derived from a frame.
@@ -51,6 +122,11 @@ type stone struct {
 	x     int
 	y     int
 	color int // 0 none, -1 black, 1 white, 9 out of bounds
+}
+
+func (s stone) zero() stone {
+	s.color = 0
+	return s
 }
 
 //frame is a representation of the board at a certain point in the game.
@@ -63,30 +139,192 @@ type frame struct {
 	turn int
 }
 
+func (f frame) print() {
+	printAline := func(s []int) string {
+		var buffer bytes.Buffer
+		for i := 0; i < len(s); i++ {
+
+			switch s[i] {
+			case -1:
+				buffer.WriteString("b")
+			case 0:
+				buffer.WriteString("•")
+			case 1:
+				buffer.WriteString("w")
+			default:
+				buffer.WriteString(strconv.Itoa(s[i]))
+			}
+			if i != len(s)-1 {
+				buffer.WriteString(" ")
+			}
+
+		}
+		return buffer.String()
+	}
+	for i := 0; i < f.size*2; i++ {
+		fmt.Print("-")
+	}
+	fmt.Print("\n")
+	for i := 0; i < f.size; i++ {
+		//fmt.Println(i*f.size," ",(i+1)*f.size)
+		fmt.Println(printAline(f.board[i*f.size:(i+1)*f.size]))
+		//fmt.Println(f.board[i*f.size:(i+1)*f.size])
+	}
+	for i := 0; i < f.size*2; i++ {
+		fmt.Print("-")
+	}
+	fmt.Print("\n")
+}
+
 //getStone is the function to retrieve the data of a position in a frame as a stone.
 func (f frame) getStone(x int, y int) (stone) {
 	pos := ((f.size * f.size) - (y * f.size) + x) - f.size
 	stone := stone{x, y, f.board[pos]}
-	return stone;
+	return stone
+}
+func (f frame) setStone(s stone) {
+	pos := ((f.size * f.size) - (s.y * f.size) + s.x) - f.size
+	f.board[pos] = s.color
 }
 
-func (f frame) getSurroundingStonesColor(s stone) (int, int, int, int) {
+func (f frame) getSurroundingStones(s stone) (stone, stone, stone, stone) {
 	top, left, bottom, right := 9, 9, 9, 9
-	if s.x < size-1 {
+	if s.x+1 < f.size-1 {
 		right = f.getStone(s.x+1, s.y).color
 	}
-	if s.x > 0 {
+	if s.x-1 > 0 {
 		left = f.getStone(s.x-1, s.y).color
 	}
-	if s.y < size-1 {
+	if s.y+1 < f.size-1 {
 		top = f.getStone(s.x, s.y+1).color
 	}
-	if s.y > 0 {
+	if s.y-1 > 0 {
 		bottom = f.getStone(s.x, s.y-1).color
 	}
 
-	return top, right, bottom, left
+	return stone{s.x, s.y + 1, top},
+		stone{s.x + 1, s.y, right},
+		stone{s.x, s.y - 1, bottom},
+		stone{s.x - 1, s.y, left}
 	// returning 9 signifies out of bounds
+}
+
+func (f frame) processTakenStones(s stone) frame {
+	nf := f.duplicate()
+	nf.setStone(s)
+	t, r, b, l := f.getSurroundingStones(s)
+
+	oppositeColor := s.color * -1
+
+	//first process opposite color
+	if t.color == oppositeColor {
+		if !nf.spotWouldHaveLiberty(t) {
+			nf.removeConnected(t)
+		}
+		fmt.Println("t", nf.spotWouldHaveLiberty(t))
+	}
+	if r.color == oppositeColor {
+		if !nf.spotWouldHaveLiberty(r) {
+			nf.removeConnected(r)
+		}
+		fmt.Println("r", nf.spotWouldHaveLiberty(r))
+	}
+	if b.color == oppositeColor {
+		if !nf.spotWouldHaveLiberty(b) {
+			nf.removeConnected(b)
+		}
+		fmt.Println("b", nf.spotWouldHaveLiberty(b))
+	}
+	if l.color == oppositeColor {
+		if !nf.spotWouldHaveLiberty(l) {
+			nf.removeConnected(l)
+		}
+		fmt.Println("l", nf.spotWouldHaveLiberty(l))
+	}
+	return nf
+
+}
+
+func (f frame) removeConnected(s stone) {
+	f.setStone(s.zero())
+	t, r, b, l := f.getSurroundingStones(s)
+
+	if t.color == s.color {
+		f.removeConnected(t)
+	}
+	if r.color == s.color {
+		f.removeConnected(r)
+	}
+	if b.color == s.color {
+		f.removeConnected(b)
+	}
+	if l.color == s.color {
+		f.removeConnected(l)
+	}
+
+}
+func (f frame) spotWouldHaveLiberty(s stone) bool {
+	ct, cr, cb, cl := f.getSurroundingStones(s)
+	x, y, color := s.x, s.y, s.color
+	pos := posMap{m: make(map[string]bool)}
+	pos.add(x, y)
+
+	top, right, bottom, left := false, false, false, false
+
+	if ct.color == 0 || cr.color == 0 || cb.color == 0 || cl.color == 0 {
+		return true
+	}
+
+	if ct.color == color {
+		top = checkEachStone(x, y+1, color, f, pos)
+	}
+	if cr.color == color {
+		right = checkEachStone(x+1, y, color, f, pos)
+	}
+	if cb.color == color {
+		left = checkEachStone(x, y-1, color, f, pos)
+	}
+	if cl.color == color {
+		bottom = checkEachStone(x-1, y, color, f, pos)
+	}
+	return top || right || bottom || left
+}
+func checkEachStone(x int, y int, color int, cf frame, pos posMap) bool {
+	fmt.Println(x, y, pos.get(x, y))
+	if pos.get(x, y) {
+		return false
+	} else {
+		pos.add(x, y)
+	}
+	ct, cr, cb, cl := cf.getSurroundingStones(stone{x: x, y: y})
+	fmt.Println(ct.color, cr.color, cb.color, cl.color)
+	if (ct.color == 0 && !pos.get(ct.x, ct.y)) ||
+		(cr.color == 0 && !pos.get(cr.x, cr.y)) ||
+		(cb.color == 0 && !pos.get(cb.x, cb.y)) ||
+		(cl.color == 0 && !pos.get(cl.x, cl.y)) {
+		return true
+	} else {
+		top, right, bottom, left := false, false, false, false
+		if ct.color == color {
+			top = checkEachStone(x, y+1, color, cf, pos)
+		}
+		if cr.color == color {
+			right = checkEachStone(x+1, y, color, cf, pos)
+		}
+		if cb.color == color {
+			left = checkEachStone(x, y-1, color, cf, pos)
+		}
+		if cl.color == color {
+			bottom = checkEachStone(x-1, y, color, cf, pos)
+		}
+		return top || right || bottom || left
+	}
+}
+
+func (f frame) duplicate() frame {
+	nf := frame{f.size, make([]int, f.size*f.size), f.turn}
+	copy(nf.board, f.board)
+	return nf
 }
 
 //Game is the representation of the entire game and is how one should access everything
@@ -126,13 +364,16 @@ func (g Game) lastFrame() frame {
 func (g Game) isMovePossible(s stone) bool {
 	cf := g.currentFrame()
 	lf := g.lastFrame()
+	fwst := cf.processTakenStones(s) //frame With Stones Taken
 	x, y, color := s.x, s.y, s.color
-	oppositeColor := color * -1
+	//oppositeColor := color * -1
+	ct, cr, cb, cl := fwst.getSurroundingStones(s)
+
 
 	lfs := lf.getStone(x, y)
 
-	isUnoccupied := func() bool {
-		return cf.getStone(x, y).color == 0
+	isOccupied := func() bool {
+		return cf.getStone(x, y).color != 0
 	}
 
 	violatesKo := func() bool {
@@ -142,14 +383,14 @@ func (g Game) isMovePossible(s stone) bool {
 			return false
 
 		} else if lfs.color == color {
-			t, r, b, l := lf.getSurroundingStonesColor(s)
+			t, r, b, l := lf.getSurroundingStones(s)
 
-			if t == color || r == color || b == color || l == color {
+			if t.color == color || r.color == color || b.color == color || l.color == color {
 				return false
-			}else {
+			} else {
 				return true
 			}
-		}else{
+		} else {
 			// if the last frame didn't have a stone there or
 			// if the last frame had a stone of the opposite color
 			// then it is impossible to violate ko
@@ -158,156 +399,38 @@ func (g Game) isMovePossible(s stone) bool {
 
 	}
 
-}
+	hasBlankNeighbor := func() bool {
+		return ct.color == 0 || cr.color == 0 || cb.color == 0 || cl.color == 0
+	}
 
-//getCurrentFrame is the function to get the Frames Struct representation of a
-//string representation of a Go Board
+	hasSameColorNeighbor := func() bool {
+		if ct.color == color || cr.color == color || cb.color == color || cl.color == color {
+			return true
+		} else {
+			return false
+		}
+	}
 
-/*
 
-func isPossible(x int, y int, color int, currentFrame []int, previousFrame []int) bool {
-	oppositeColor := 0 - color
+	fmt.Println("isOccupied", isOccupied())
+	fmt.Println("violatesKo", violatesKo())
+	fmt.Println("hasBlankNeighbor", hasBlankNeighbor())
+	fmt.Println("hasSameColorNeighbor", hasSameColorNeighbor())
+	fmt.Println("spotWouldHaveLiberty", cf.spotWouldHaveLiberty(s))
 
-	// basic surrounding
-	ct, cr, cb, cl := getSurroundingStones(x, y, currentFrame) //  current bottom, top, right, left
-
-	if getStoneState(x, y, previousFrame) == color {
+	if violatesKo() {
 		return false
-	}
-
-	if ct == 9 && cr == 9 { //top and right out of bounds
-		if cb == oppositeColor && cl == oppositeColor { // surround on bottom and left
-
-			return false
-
-		} else if cb != 0 && cl != 0 { // need to search around to find if connected stones
-
-			return hasLiberty(x, y, color, currentFrame, 0)
-
-		}
-
-	} else if ct == 9 && cl == 9 {// top and left out of bounds
-		if cb == oppositeColor && cr == oppositeColor {
-
-			return false
-
-		} else if cb != 0 && cr != 0 {
-
-			return hasLiberty(x, y, color, currentFrame, 0)
-
-		}
-
-	} else if cb == 9 && cr == 9 { // bottom and right out of bounds
-		if ct == oppositeColor && cl == oppositeColor { //surrounded on left and and top
-
-			return false
-
-		} else if ct != 0 && cl != 0 { // top and left are not empty
-
-			return hasLiberty(x, y, color, currentFrame, 0)
-
-		}
-	} else if cb == 9 && cl == 9 { // bottom and left out of bounds
-		if cb == oppositeColor && cr == oppositeColor {
-
-			return false
-
-		} else if ct != 0 && cr != 0 {
-
-			return hasLiberty(x, y, color, currentFrame, 0)
-
-		}
-
-	} else if ct == 9 { // top is out of bounds
-		if cb == oppositeColor && cr == oppositeColor && cl == oppositeColor { // bottom left and right sides are surrounded
-
-			return false
-
-		} else if cl != 0 && cr != 0 && cb != 0 {
-
-			return hasLiberty(x, y, color, currentFrame, 0)
-
-		}
-
-	} else if cr == 9 {
-		if cb == oppositeColor && ct == oppositeColor && cl == oppositeColor { // bottom left and top sides are surrounded
-
-			return false
-
-		} else if ct != 0 && cl != 0 && cb != 0 {
-
-			return hasLiberty(x, y, color, currentFrame, 0)
-
-		}
-
-	} else if cb == 9 {
-		if ct == oppositeColor && cr == oppositeColor && cl == oppositeColor { // top left and right sides are surrounded
-
-			return false
-
-		} else if cl != 0 && cr != 0 && ct != 0 {
-
-			return hasLiberty(x, y, color, currentFrame, 0)
-
-		}
-
-	} else if cl == 9 {
-		if cb == oppositeColor && cr == oppositeColor && ct == oppositeColor { // bottom top and right sides are surrounded
-
-			return false
-
-		} else if ct != 0 && cr != 0 && cb != 0 {
-
-			return hasLiberty(x, y, color, currentFrame, 0)
-
-		}
-	}
-	return true
-}
-
-func hasLiberty(x int, y int, color int, aFrame []int, exclude int) bool {
-
-
-	// exclude a certain direction
-	//0 = none, 1 = top, 2 = right, 3 = bottom, 4 = left
-
-	oppositeColor := 0 - color
-
-	t, r, b, l := getSurroundingStones(x, y, aFrame)
-
-	if t == 0 || r == 0 || b == 0 || l == 0 {
+	} else if isOccupied() {
+		return false
+	} else if hasBlankNeighbor() {
 		return true
-	}
-	if t == color && exclude != 1 {
-		return hasLiberty(x+1, y, color, aFrame, 4)
-	} else if r == color && exclude != 2 {
-		return hasLiberty(x+1, y, color, aFrame, 4)
-	} else if b == color && exclude != 3 {
-		return hasLiberty(x+1, y, color, aFrame, 1)
-	} else if l == color && exclude != 4 {
-		return hasLiberty(x+1, y, color, aFrame, 2)
-	}
-	return false
-}
-
-func getSurroundingStones(x int, y int, aFrame []int) (int, int, int, int) {
-	top, left, bottom, right := 9, 9, 9, 9
-	if x < size - 1 {
-		right = getStoneState(x+1, y, aFrame)
-	}
-	if x > 0 {
-		left = getStoneState(x-1, y, aFrame)
-	}
-	if y < size - 1 {
-		top = getStoneState(x, y+1, aFrame)
-	}
-	if y > 0 {
-		bottom = getStoneState(x, y-1, aFrame)
+	} else if !hasSameColorNeighbor() {
+		return false
+	} else {
+		return cf.spotWouldHaveLiberty(s)
 	}
 
-	return top, right, bottom, left
-	// returning 9 signifies out of bounds
-}*/
+} //has been validated with non exhaustive tests
 
 /*
 12345678901234567890
