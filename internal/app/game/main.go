@@ -1,13 +1,18 @@
-package main
+package game
 
 import (
 	"strconv"
 	"fmt"
 	"bytes"
+	"log"
+	"time"
 )
 
-/*
+//TODO refactor color into constants
+//TODO separate into packages
 
+/*
+ -1 is black
 Goal:
 input x,y,color
 return isPossible, currentBoardToDisplay
@@ -16,7 +21,7 @@ starting from the beginning of the game each move a frame is saved
 a frame being a stored form of the current board state
 
 A. before each move is made it must be checked to be legal
-x .5 check if spot is un ocupied
+x .5 check if spot is unoccupied
 x 1. first we must check that move satisfies the rule of ko (board must change between moves)
 x 2. second we should check if the place is next to any open space, if true then move is legal
 x3. if false we should check if it is next to any stones of the same color
@@ -43,58 +48,28 @@ B. after each move is made, touching other color stones must have liberties chec
 
 func main() {
 	//fmt.Println(sa)
-	g := Game{size: 9,
-		frameRecord: []frame{
-			{size: 9,
-				board: []int{
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-				},
-			},
-			{size: 9,
-				board: []int{
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-				},
-			},
-			{size: 9,
-				board: []int{
-					0, 1, -1, -1, 0, 0, 0, 0, 0, //y 8
-					1, 0, 1, 1, -1, 0, 0, 0, 0,
-					0, 1, -1, 1, -1, 0, 0, 0, 0,
-					0, 0, 0, -1, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0, //y 0
-				},
-			},
-		},
-	}
+	g := Game{}.new(9)
+	g.Move(stone{0, 0, 1})
+	g.Move(stone{1, 0, 1})
+	g.Move(stone{2, 0, 1})
+	g.Move(stone{2, 1, 1})
+	g.Move(stone{2, 2, 1})
+	g.Move(stone{1, 2, 1})
+	g.Move(stone{0, 2, 1})
+	g.Move(stone{0, 1, 1})
 
-	//anf := g.frameRecord[2]
-	//anf.print()
-	//anf.processTakenStones(stone{1, 7, -1})
+	g.Move(stone{0 + 5, 0, -1})
+	g.Move(stone{1 + 5, 0, -1})
+	g.Move(stone{2 + 5, 0, -1})
+	g.Move(stone{2 + 5, 1, -1})
+	g.Move(stone{2 + 5, 2, -1})
+	g.Move(stone{1 + 5, 2, -1})
+	g.Move(stone{0 + 5, 2, -1})
+	g.Move(stone{0 + 5, 1, -1})
 
-	//fmt.Println(anf.getSurroundingStones(stone{1,8, -1}))
-	//fmt.Println(anf.getStone(1,8).color)
+	g.currentFrame().print()
 
-	fmt.Println(g.isMovePossible(stone{1, 7, -1}))
+	g.end()
 
 }
 
@@ -114,6 +89,14 @@ func (p posMap) add(x int, y int) {
 func (p posMap) get(x int, y int) bool {
 	str := strconv.Itoa(x) + "," + strconv.Itoa(y)
 	return p.m[str]
+}
+
+func (p posMap) stoneGet(s stone) bool {
+	return p.get(s.x, s.y)
+}
+
+func (posMap) init() posMap {
+	return posMap{m: make(map[string]bool)}
 }
 
 // stone is a representation of a spot on a board.
@@ -151,6 +134,8 @@ func (f frame) print() {
 				buffer.WriteString("•")
 			case 1:
 				buffer.WriteString("w")
+			case 103: // for debuging
+				buffer.WriteString("c")
 			default:
 				buffer.WriteString(strconv.Itoa(s[i]))
 			}
@@ -167,7 +152,7 @@ func (f frame) print() {
 	fmt.Print("\n")
 	for i := 0; i < f.size; i++ {
 		//fmt.Println(i*f.size," ",(i+1)*f.size)
-		fmt.Println(printAline(f.board[i*f.size:(i+1)*f.size]))
+		fmt.Println(printAline(f.board[i*f.size : (i+1)*f.size]))
 		//fmt.Println(f.board[i*f.size:(i+1)*f.size])
 	}
 	for i := 0; i < f.size*2; i++ {
@@ -182,23 +167,24 @@ func (f frame) getStone(x int, y int) (stone) {
 	stone := stone{x, y, f.board[pos]}
 	return stone
 }
-func (f frame) setStone(s stone) {
+
+func (f *frame) setStone(s stone) {
 	pos := ((f.size * f.size) - (s.y * f.size) + s.x) - f.size
 	f.board[pos] = s.color
 }
 
 func (f frame) getSurroundingStones(s stone) (stone, stone, stone, stone) {
 	top, left, bottom, right := 9, 9, 9, 9
-	if s.x+1 < f.size-1 {
+	if s.x+1 < f.size {
 		right = f.getStone(s.x+1, s.y).color
 	}
-	if s.x-1 > 0 {
+	if s.x > 0 {
 		left = f.getStone(s.x-1, s.y).color
 	}
-	if s.y+1 < f.size-1 {
+	if s.y+1 < f.size {
 		top = f.getStone(s.x, s.y+1).color
 	}
-	if s.y-1 > 0 {
+	if s.y > 0 {
 		bottom = f.getStone(s.x, s.y-1).color
 	}
 
@@ -263,10 +249,11 @@ func (f frame) removeConnected(s stone) {
 	}
 
 }
+
 func (f frame) spotWouldHaveLiberty(s stone) bool {
 	ct, cr, cb, cl := f.getSurroundingStones(s)
 	x, y, color := s.x, s.y, s.color
-	pos := posMap{m: make(map[string]bool)}
+	pos := posMap{}.init()
 	pos.add(x, y)
 
 	top, right, bottom, left := false, false, false, false
@@ -289,6 +276,7 @@ func (f frame) spotWouldHaveLiberty(s stone) bool {
 	}
 	return top || right || bottom || left
 }
+
 func checkEachStone(x int, y int, color int, cf frame, pos posMap) bool {
 	fmt.Println(x, y, pos.get(x, y))
 	if pos.get(x, y) {
@@ -327,18 +315,56 @@ func (f frame) duplicate() frame {
 	return nf
 }
 
+func newFrame(size int, turn int) frame {
+	b := make([]int, size*size)
+	return frame{size, b, turn}
+}
+
+type stoneStack struct {
+	slice []stone
+	size  int
+}
+
+func (st *stoneStack) push(sn stone) {
+	st.slice = append(st.slice, sn)
+	st.size += 1
+}
+func (st *stoneStack) pushSlice(ss []stone) {
+	for _, s := range ss {
+		st.push(s)
+	}
+}
+
+func (st *stoneStack) peek() stone {
+	return st.slice[len(st.slice)-1] // view last item in stack which was added last
+}
+
+func (st *stoneStack) pop() stone {
+	if st.size > 0 {
+		var r = st.peek()
+		st.slice = st.slice[0 : len(st.slice)-1] // remove last item in slice the one that was peeked
+		st.size -= 1
+		return r
+	} else {
+		return stone{}
+	}
+}
+
 //Game is the representation of the entire game and is how one should access everything
 type Game struct {
 	size int
 	//frameRecord is the array of all the frames from each move in the game
-	frameRecord []frame
-	currentTurn int
+	frameRecord  []frame
+	currentTurn  int
+	currentColor int // -1 black, 1 white
+	gameOver     bool
+	lastPass     int
+	score        score
 }
 
 //blankFrame returns a new blank frame based on the standard frame size of the game
 func (g Game) blankFrame() frame {
-	b := make([]int, g.size*g.size)
-	return frame{g.size, b, 0}
+	return newFrame(g.size, g.currentTurn)
 }
 
 //currentFrame get the current frame if it exists.
@@ -368,7 +394,6 @@ func (g Game) isMovePossible(s stone) bool {
 	x, y, color := s.x, s.y, s.color
 	//oppositeColor := color * -1
 	ct, cr, cb, cl := fwst.getSurroundingStones(s)
-
 
 	lfs := lf.getStone(x, y)
 
@@ -410,13 +435,14 @@ func (g Game) isMovePossible(s stone) bool {
 			return false
 		}
 	}
-
-
-	fmt.Println("isOccupied", isOccupied())
-	fmt.Println("violatesKo", violatesKo())
-	fmt.Println("hasBlankNeighbor", hasBlankNeighbor())
-	fmt.Println("hasSameColorNeighbor", hasSameColorNeighbor())
-	fmt.Println("spotWouldHaveLiberty", cf.spotWouldHaveLiberty(s))
+	//debug
+	/*
+		fmt.Println("isOccupied", isOccupied())
+		fmt.Println("violatesKo", violatesKo())
+		fmt.Println("hasBlankNeighbor", hasBlankNeighbor())
+		fmt.Println("hasSameColorNeighbor", hasSameColorNeighbor())
+		fmt.Println("spotWouldHaveLiberty", cf.spotWouldHaveLiberty(s))
+	*/
 
 	if violatesKo() {
 		return false
@@ -432,25 +458,217 @@ func (g Game) isMovePossible(s stone) bool {
 
 } //has been validated with non exhaustive tests
 
-/*
-12345678901234567890
-"0000000000000000000
-0002000000000000000
-0000000000000000000
-0000000000000000000
-0000000000000000000
-0000000000000000000
-0000000000000000000
-0000000000000000000
-0000000000000000000
-0000000000000000000
-0000000000000000000
-0000000000000000000
-0000000000000000000
-0000000000000000000
-0000000000000000000
-0000000000000000000
-0000000000000000000
-0000000000000000000
-0000000000000000000"
- */
+func (g *Game) Move(s stone) bool {
+	if g.isMovePossible(s) {
+		f := g.currentFrame().processTakenStones(s)
+		g.frameRecord = append(g.frameRecord, f)
+		g.currentTurn++
+		g.lastPass = 0
+		g.currentColor *= -1
+		return true
+	} else {
+		return false
+	}
+}
+
+func (Game) new(size int) Game {
+	return Game{size, []frame{newFrame(size, 0)}, 1, -1, false, 0}
+}
+
+
+type score struct {
+	fr         frame  // current frame when score is calculated
+	pm         posMap // posmap When score is calculated
+	stack      stoneStack
+	blackScore int
+	whiteScore int
+	debug      bool
+
+	/*
+	1. find a position that is blank
+	2. check if it is next to a black stone
+	3. check if it is next to a white stone
+	4. check if it is next to any blank stones
+	5. add all blank stones to stack
+	6. add stone to recorded positions
+	7. go to next blank stone in stack
+	8. if no more stones in stack return
+	*/
+}
+
+func (sc *score) checkNeighbors(x int, y int, color int) (bool) {
+	ts, rs, bs, ls := sc.fr.getSurroundingStones(stone{x, y, color})
+
+	if ts.color == color {
+		return true
+	}
+	if rs.color == color {
+		return true
+	}
+	if bs.color == color {
+		return true
+	}
+	if ls.color == color {
+		return true
+	}
+	return false
+}
+func (sc *score) findAllNeighborsBlank(x int, y int) ([]stone) {
+
+	ts, rs, bs, ls := sc.fr.getSurroundingStones(stone{x, y, 0})
+	var ss = []stone{ts, rs, bs, ls}
+	var ret []stone
+	for _, val := range ss {
+		if val.color == 0 {
+			ret = append(ret, val)
+		}
+	}
+	return ret
+
+}
+func (sc *score) countOneStone(cs stone, touchedColor int, currentScore int) (int, int) { // score, color
+	y := cs.y
+	x := cs.x
+	var next stone = stone{0, 0, 99}
+	if !sc.pm.stoneGet(cs) {
+		sc.fr.setStone(stone{x, y, 103})
+
+		if sc.debug {
+			sc.fr.print()
+		}
+
+		duration := time.Millisecond * 250
+		time.Sleep(duration)
+
+		currentScore += 1
+
+		sc.pm.add(x, y) // save that stone has been checked
+
+		blankNeighbors := sc.findAllNeighborsBlank(x, y) // find all neighbors that are blank
+		if len(blankNeighbors) > 0 {
+			next = blankNeighbors[0]
+			for _, v := range blankNeighbors {
+
+				sc.fr.setStone(stone{v.x, v.y, 3})
+				sc.stack.push(v)
+			}
+		}
+		if sc.debug {
+			sc.fr.print() // for debug
+		}
+
+		nextToBlack := sc.checkNeighbors(x, y, -1)
+		nextToWhite := sc.checkNeighbors(x, y, 1)
+
+		// check if touching two colors invalidates group
+		if touchedColor == 0 {
+			if nextToBlack && nextToWhite {
+				if sc.debug {
+					fmt.Println("group touchedColor = 6346 (\"dead\") b/c both") // debug
+				}
+				touchedColor = 6346
+			} else if nextToWhite {
+				touchedColor = 1
+			} else if nextToBlack {
+				touchedColor = -1
+			}
+			//if touches neither, color is 0
+		} else if touchedColor == -1 && nextToWhite {
+			if sc.debug {
+				fmt.Println("group touchedColor = 6346 (\"dead\") b/c white") // for debug
+			}
+			touchedColor = 6346
+		} else if touchedColor == 1 && nextToBlack {
+			if sc.debug {
+				fmt.Println("group touchedColor = 6346 (\"dead\") b/c black") // for debug
+			}
+			touchedColor = 6346
+		} else if touchedColor == 6346 {
+			currentScore = 0;
+		}
+	}
+	if sc.stack.size > 0 || (next != stone{color: 99}) {
+		var s stone;
+		if (next == stone{color: 99}) {
+			s = sc.stack.pop()
+		} else {
+			s = next
+		}
+		score, color := sc.countOneStone(s, touchedColor, currentScore)
+
+		return score, color
+
+	}
+	if sc.debug {
+		fmt.Println("ended ran out of stack") // for debug
+	}
+	return currentScore, touchedColor
+}
+
+
+func (sc *score) countAllStones() {
+	size := sc.fr.size
+	for x := 0; x < size; x++ {
+		for y := 0; y < size; y++ {
+			s := sc.fr.getStone(x, y)
+			if s.color == 0 {
+				//sc.stack.push(s);
+				sc.fr.setStone(stone{s.x, s.y, 3})
+				score, color := sc.countOneStone(s, 0, 0)
+
+				switch color {
+				case -1:
+					sc.blackScore += score
+				case 1:
+
+					sc.whiteScore += score
+				case 0, 6346:
+					continue
+
+				default:
+					//print(color)
+					log.Panic("Incorrect Color Return!")
+				}
+			}
+
+		}
+	}
+
+	/*for(sc.stack.size > 0){
+		s := sc.stack.pop()
+		score, color := sc.countOneStone(s, 0, 0)
+
+
+	}*/
+}
+
+func (g Game) end() {
+	sc := score{fr: g.currentFrame(), pm: posMap{}.init()}
+
+	//sc.debug = true // for debugging the score
+
+	sc.countAllStones()
+	fmt.Println("White: "+strconv.Itoa(sc.whiteScore), "Black: "+strconv.Itoa(sc.whiteScore))
+
+}
+
+func (g Game) Pass(color int) bool {
+	if color == g.currentColor {
+		if g.lastPass == g.currentColor * -1 {
+			g.gameOver = true
+			return true
+		}
+		g.currentTurn ++
+		g.lastPass = color
+		g.currentColor *= -1
+		return true
+	} else {
+		return false
+	}
+}
+
+func (g Game) Forfeit(color int) {
+
+}
+
+//cmdline specific
