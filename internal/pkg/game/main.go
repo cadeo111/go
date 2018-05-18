@@ -61,9 +61,10 @@ type Game struct {
 	frameRecord  []position.Frame
 	CurrentTurn  int
 	CurrentColor int // -1 black, 1 white
-	gameOver     bool
+	GameOver     bool
 	lastPass     int
-	Handicap     int
+	CapturedWhiteStones int
+	CapturedBlackStones int
 	sc           score.Score
 }
 
@@ -95,7 +96,7 @@ func (g Game) lastFrame() position.Frame {
 func (g Game) isMovePossible(s stone.Stone) bool {
 	cf := g.currentFrame()
 	lf := g.lastFrame()
-	fwst := cf.ProcessTakenStones(s) //position With Stones Taken
+	fwst,_ := cf.ProcessTakenStones(s) //position With Stones Taken
 	x, y, color := s.X, s.Y, s.Color
 	//oppositeColor := color * -1
 	ct, cr, cb, cl := fwst.GetSurroundingStones(s)
@@ -163,13 +164,18 @@ func (g Game) isMovePossible(s stone.Stone) bool {
 
 } //has been validated with non exhaustive tests
 
-func (g *Game) Move(x int, y int, color int) {
-	g.move(stone.Stone{x, y, color})
+func (g *Game) Move(x int, y int, color int) bool {
+	return g.move(stone.Stone{x, y, color})
 }
 
 func (g *Game) move(s stone.Stone) bool {
 	if g.isMovePossible(s) {
-		f := g.currentFrame().ProcessTakenStones(s)
+		f , removed := g.currentFrame().ProcessTakenStones(s)
+		if(s.Color == BLACK){
+			g.CapturedWhiteStones += removed
+		}else{
+			g.CapturedBlackStones += removed
+		}
 		g.frameRecord = append(g.frameRecord, f)
 		g.CurrentTurn++
 		g.lastPass = 0
@@ -181,7 +187,7 @@ func (g *Game) move(s stone.Stone) bool {
 }
 
 func (Game) New(size int) Game {
-	return Game{size: size, frameRecord: []position.Frame{position.NewFrame(size, 0)}, CurrentTurn: 1, CurrentColor: -1, gameOver: false, lastPass: 0 }
+	return Game{size: size, frameRecord: []position.Frame{position.NewFrame(size, 0)}, CurrentTurn: 1, CurrentColor: -1, GameOver: false, lastPass: 0 }
 }
 
 func (g *Game) End() {
@@ -199,7 +205,7 @@ func (g *Game) End() {
 func (g *Game) Pass(color int) bool {
 	if color == g.CurrentColor {
 		if g.lastPass == g.CurrentColor * -1 {
-			g.gameOver = true
+			g.GameOver = true
 			return true
 		}
 		g.CurrentTurn ++
@@ -223,5 +229,9 @@ func (g *Game) Forfeit(color int) {
 
 func (g Game) Print() {
 	g.currentFrame().Print()
+}
+
+func (g Game) BoardString() string{
+	return g.currentFrame().ToString()
 }
 

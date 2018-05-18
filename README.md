@@ -1,2 +1,2 @@
 # goGame
-the game of go written in golang
+a 2p game of go for the cmd line written in golang

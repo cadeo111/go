@@ -31,7 +31,7 @@ func (Map) Init() Map {
 
 
 
-
+const DEBUG_FRAME = false
 
 type Frame struct {
 	//Size is the max x and y of a position on the board
@@ -81,6 +81,7 @@ func (f Frame) Print() {
 	for i := 0; i < f.Size*2; i++ {
 		fmt.Print("-")
 	}
+
 	fmt.Print("\n")
 }
 func (f Frame) toFormattedString() string {
@@ -127,7 +128,7 @@ func (f Frame) toFormattedString() string {
 }
 
 
-func (f Frame) toString() string {
+func (f Frame) ToString() string {
 	var final bytes.Buffer
 	aLine := func(s []int) string {
 		var buffer bytes.Buffer
@@ -144,7 +145,7 @@ func (f Frame) toString() string {
 				buffer.WriteString(strconv.Itoa(s[i]))
 			}
 			if i != len(s)-1 {
-				buffer.WriteString(" ")
+				buffer.WriteString("")
 			}
 
 		}
@@ -153,13 +154,12 @@ func (f Frame) toString() string {
 	for i := 0; i < f.Size; i++ {
 
 		final.WriteString(aLine(f.board[i*f.Size : (i+1)*f.Size]))
-
+		if i != f.Size-1 {
+			final.WriteString("/")
+		}
 	}
 	return final.String()
 }
-
-
-
 
 
 
@@ -197,39 +197,49 @@ func (f Frame) GetSurroundingStones(s sn.Stone) (sn.Stone, sn.Stone, sn.Stone, s
 	// returning 9 signifies out of bounds
 }
 
-func (f Frame) ProcessTakenStones(s sn.Stone) Frame {
+func (f Frame) ProcessTakenStones(s sn.Stone) (Frame Frame, numRemoved int) {
 	nf := f.duplicate()
 	nf.SetStone(s)
 	t, r, b, l := f.GetSurroundingStones(s)
 
 	oppositeColor := s.Color * -1
 
+	takenStones := 0
+
 	//first process opposite color
 	if t.Color == oppositeColor {
 		if !nf.SpotWouldHaveLiberty(t) {
-			nf.removeConnected(t)
+			takenStones += nf.removeConnected(t)
 		}
+		if DEBUG_FRAME {
 		fmt.Println("t", nf.SpotWouldHaveLiberty(t))
+		}
 	}
 	if r.Color == oppositeColor {
 		if !nf.SpotWouldHaveLiberty(r) {
-			nf.removeConnected(r)
+			takenStones += nf.removeConnected(r)
 		}
-		fmt.Println("r", nf.SpotWouldHaveLiberty(r))
+		if DEBUG_FRAME {
+			fmt.Println("r", nf.SpotWouldHaveLiberty(r))
+		}
 	}
 	if b.Color == oppositeColor {
 		if !nf.SpotWouldHaveLiberty(b) {
-			nf.removeConnected(b)
+			takenStones += nf.removeConnected(b)
 		}
-		fmt.Println("b", nf.SpotWouldHaveLiberty(b))
+		if DEBUG_FRAME {
+			fmt.Println("b", nf.SpotWouldHaveLiberty(b))
+		}
 	}
 	if l.Color == oppositeColor {
 		if !nf.SpotWouldHaveLiberty(l) {
-			nf.removeConnected(l)
+			takenStones += nf.removeConnected(l)
 		}
-		fmt.Println("l", nf.SpotWouldHaveLiberty(l))
+		if DEBUG_FRAME {
+			fmt.Println("l", nf.SpotWouldHaveLiberty(l))
+		}
 	}
-	return nf
+	return nf, takenStones
 
 }
 
@@ -267,23 +277,24 @@ func NewFrame(size int, turn int) Frame {
 
 //private
 
-func (f Frame) removeConnected(s sn.Stone) {
+func (f Frame) removeConnected(s sn.Stone)  (removedNum int) {
 	f.SetStone(sn.Stone{})
 	t, r, b, l := f.GetSurroundingStones(s)
+	tot := 1
 
 	if t.Color == s.Color {
-		f.removeConnected(t)
+		tot += f.removeConnected(t)
 	}
 	if r.Color == s.Color {
-		f.removeConnected(r)
+		tot += f.removeConnected(r)
 	}
 	if b.Color == s.Color {
-		f.removeConnected(b)
+		tot += f.removeConnected(b)
 	}
 	if l.Color == s.Color {
-		f.removeConnected(l)
+		tot+= f.removeConnected(l)
 	}
-
+	return tot
 }
 
 func (f Frame) duplicate() Frame {
