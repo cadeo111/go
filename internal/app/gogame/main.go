@@ -40,5 +40,7 @@ func (g *GoGame) Run(ui UserInterface) {
 		}
 		ui.ShowBoard(g.game.BoardString(), g.game.CapturedBlackStones, g.game.CapturedWhiteStones)
 	}
+	g.game.End()
+
 	ui.Message(false, "gameOver", "game is over")
 }

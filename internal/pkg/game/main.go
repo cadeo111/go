@@ -2,12 +2,10 @@ package game
 
 import (
 
-	"fmt"
 	"goGame/internal/pkg/stone"
 	"goGame/internal/pkg/position"
 	"goGame/internal/pkg/score"
 	"log"
-	"strconv"
 )
 
 
@@ -196,8 +194,9 @@ func (g *Game) End() {
 	//sc.debug = true // for debugging the Score
 
 	sc.CountAllStones()
-	fmt.Println("White: "+strconv.Itoa(sc.White), "Black: "+strconv.Itoa(sc.Black))
-
+	//fmt.Println("White: "+strconv.Itoa(sc.White), "Black: "+strconv.Itoa(sc.Black))
+	sc.Black += g.CapturedWhiteStones
+	sc.White += g.CapturedBlackStones
 	g.sc = sc
 
 }

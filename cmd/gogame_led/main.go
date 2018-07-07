@@ -7,14 +7,14 @@ import (
 	"bufio"
 	"os"
 	"strconv"
-	"bytes"
 )
 
-type cmd struct {
+type cmdLED struct {
 	gameSize int
+	//serialConnection io.ReadWriteCloser
 }
 
-func (c cmd) RequestNextMove(color int, board string) (kind int, x int, y int) { // gives color, expects(1:move, 2:pass, 3:forfeit), x,y
+func (c cmdLED) RequestNextMove(color int, board string) (kind int, x int, y int) { // gives color, expects(1:move, 2:pass, 3:forfeit), x,y
 	var colorString string
 	switch color {
 	case gogame.WHITE:
@@ -64,57 +64,19 @@ func (c cmd) RequestNextMove(color int, board string) (kind int, x int, y int) {
 	return 9, 9, 9
 }
 
-func (c cmd) ShowBoard(board string, capBlack int, capWhite int) {
-	fmt.Println(board)
-	for i := 0; i < (c.gameSize)*2+1; i++ {
-		fmt.Print("-")
-	}
-	fmt.Print("\n")
-
-	sa := strings.Split(board, "/")
-	f := func (s []string) string {
-		var buffer bytes.Buffer
-		for i, v := range s {
-
-			switch v {
-			case "n":
-				buffer.WriteString("•")
-			default:
-				buffer.WriteString(s[i])
-			}
-			if i != len(s)-1 {
-				buffer.WriteString(" ")
-			}
-		}
-		return buffer.String()
-	}
-
-	for i := 0; i < c.gameSize; i++ {
-		fmt.Print((c.gameSize - i -1)," ")
-		fmt.Println(f(strings.Split(sa[i],"")))
-	}
-	fmt.Print("+ ")
-	for i := 0; i < (c.gameSize); i++ {
-		fmt.Print(i, " ")
-	}
-	fmt.Print("\n")
-	for i := 0; i < (c.gameSize)*2 +1; i++ {
-		fmt.Print("-")
-	}
-	fmt.Print("\n")
-	if(capBlack > 0 || capWhite > 0) {
-		fmt.Println("White: ", capBlack, "\nBlack: ", capWhite)
-	}
-	fmt.Print("\n\n")
+func (c cmdLED) ShowBoard(board string, capBlack int, capWhite int) {
+	sa := strings.Split(strings.Replace(board, "/","",-1),"")
+	fmt.Println(sa[0])
 }
 
-func (cmd) Message(error bool, kind string, message string) {
+func (cmdLED) Message(error bool, kind string, message string) {
 	fmt.Println(message)
 }
 
 func main() {
-	input := cmd{9}
+	input := cmdLED{9}
 
 	g := gogame.Init(9, 0)
 	g.Run(input)
 }
+
