@@ -7,11 +7,13 @@ import (
 	"bufio"
 	"os"
 	"strconv"
+	"goGame/internal/pkg/led"
+	"io"
 )
 
 type cmdLED struct {
 	gameSize int
-	//serialConnection io.ReadWriteCloser
+	serialConnection io.ReadWriteCloser
 }
 
 func (c cmdLED) RequestNextMove(color int, board string) (kind int, x int, y int) { // gives color, expects(1:move, 2:pass, 3:forfeit), x,y
@@ -65,8 +67,25 @@ func (c cmdLED) RequestNextMove(color int, board string) (kind int, x int, y int
 }
 
 func (c cmdLED) ShowBoard(board string, capBlack int, capWhite int) {
-	sa := strings.Split(strings.Replace(board, "/","",-1),"")
-	fmt.Println(sa[0])
+
+	// create an integer array from board format
+	arrayString := strings.Split(strings.Replace(board, "/","",-1),"")
+	arrayInteger := make([]int, 81)
+	for i , s := range arrayString {
+		switch s {
+		case "n":
+			arrayInteger[i] = 2;
+		case "b":
+			arrayInteger[i] = 0;
+		case "w":
+			arrayInteger[i] = 1;
+		}
+	}
+
+	// pass integer array to be sent to arduino
+	// *** c not being a pointer could fuck things up
+
+	led.UpdateBoard(arrayInteger, c.serialConnection)
 }
 
 func (cmdLED) Message(error bool, kind string, message string) {
@@ -74,7 +93,8 @@ func (cmdLED) Message(error bool, kind string, message string) {
 }
 
 func main() {
-	input := cmdLED{9}
+	s := led.OpenConnection("")
+	input := cmdLED{9, s}
 
 	g := gogame.Init(9, 0)
 	g.Run(input)
