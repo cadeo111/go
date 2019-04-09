@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"bytes"
 	"fmt"
-	sn "goGame/internal/pkg/stone"
+	sn "go/pkg/stone"
 )
 //Map is a representation of the board at a certain point in the game.
 type Map struct {

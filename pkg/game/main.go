@@ -2,9 +2,9 @@ package game
 
 import (
 
-	"goGame/internal/pkg/stone"
-	"goGame/internal/pkg/position"
-	"goGame/internal/pkg/score"
+	"go/pkg/stone"
+	"go/pkg/position"
+	"go/pkg/score"
 	"log"
 )
 

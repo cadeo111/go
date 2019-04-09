@@ -1,7 +1,7 @@
 package gogame
 
 import (
-	gm "goGame/internal/pkg/game"
+	gm "go/pkg/game"
 )
 
 const BLACK = gm.BLACK

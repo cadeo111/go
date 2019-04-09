@@ -1,8 +1,8 @@
 package score
 
 import (
-	"goGame/internal/pkg/position"
-	"goGame/internal/pkg/stone"
+	"go/pkg/position"
+	"go/pkg/stone"
 	"fmt"
 	"log"
 	"time"

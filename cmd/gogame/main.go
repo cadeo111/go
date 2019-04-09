@@ -1,7 +1,7 @@
 package main
 
 import (
-	"goGame/internal/app/gogame"
+	"go/app/gogame"
 	"fmt"
 	"strings"
 	"bufio"
@@ -53,7 +53,7 @@ func (c cmd) RequestNextMove(color int, board string) (kind int, x int, y int) {
 			return 2, 0, 0
 		case "f","forfeit":
 			return 3, 0, 0
-		case "s","b","show board":
+		case "s","b","sb","show board":
 			c.ShowBoard(board, -1, -1)
 		default:
 			fmt.Println(
@@ -65,7 +65,6 @@ func (c cmd) RequestNextMove(color int, board string) (kind int, x int, y int) {
 }
 
 func (c cmd) ShowBoard(board string, capBlack int, capWhite int) {
-	fmt.Println(board)
 	for i := 0; i < (c.gameSize)*2+1; i++ {
 		fmt.Print("-")
 	}
